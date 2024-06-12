@@ -1,10 +1,11 @@
 import pandas as pd
 import folium
 import webbrowser
+import sys
 from math import radians, sin, cos, sqrt, atan2
 
 def haversine(lat1, lon1, lat2, lon2):
-    R = 6371.0  
+    R = 6371.0 
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
     a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
@@ -12,7 +13,6 @@ def haversine(lat1, lon1, lat2, lon2):
     distance = R * c
     return distance
 
-# Clase que representa y maneja el Grafo
 class Graph:
     def __init__(self, vertices):
         self.V = vertices
@@ -52,7 +52,7 @@ class Graph:
         for node in range(self.V):
             parent.append(node)
             rank.append(0)
-        while e < self.V - 1: # Mientras el número de aristas a tomar es menor que V-1
+        while e < self.V - 1: 
             # Elegimos el borde más pequeño e incrementamos el índice para la próxima iteración
             u, v, w = self.graph[i]
             i = i + 1
@@ -66,54 +66,57 @@ class Graph:
 
         # Aristas que forman parte del MST
         for u, v, weight in result:
-            tot_weight = tot_weight + weight
+            tot_weight += weight
             print("%d - %d: %f" % (u, v, weight))
 
         print("Costo total del MST para el grafo: ", tot_weight)
 
         return result
 
-ubicacion_base = [-24.1858, -65.2992]
+def main():
+    num_datos = int(sys.argv[1])
 
-mapa = folium.Map(location=ubicacion_base, zoom_start=13)
+    ubicacion_base = [-24.1858, -65.2992]
 
-archivo = 'dataset-jujuy.csv'
-datos = pd.read_csv(archivo)
+    mapa = folium.Map(location=ubicacion_base, zoom_start=13)
 
-datos[['longitud', 'latitud']] = datos['geojson'].str.split(',', expand=True)
+    archivo = 'dataset-jujuy.csv'
+    datos = pd.read_csv(archivo, nrows=num_datos)
 
-datos['latitud'] = datos['latitud'].astype(float)
-datos['longitud'] = datos['longitud'].astype(float)
+    datos[['longitud', 'latitud']] = datos['geojson'].str.split(',', expand=True)
+    datos['latitud'] = datos['latitud'].astype(float)
+    datos['longitud'] = datos['longitud'].astype(float)
 
-folium.Marker(location=ubicacion_base, icon=folium.Icon(color='red')).add_to(mapa)
+    folium.Marker(location=ubicacion_base, icon=folium.Icon(color='red')).add_to(mapa)
 
+    nodos_medio = []
+    nodos_alta = []
+    ubicaciones = [ubicacion_base]  
 
-nodos_medio = []
-nodos_alta = []
-ubicaciones = [ubicacion_base]  
+    for indice, fila in datos.iterrows():
+        ubicacion = [fila['latitud'], fila['longitud']]
+        folium.Marker(location=ubicacion, icon=folium.Icon(color='orange')).add_to(mapa)
+        ubicaciones.append(ubicacion)
+        
+        if fila['tension'] <= 20:
+            nodos_medio.append(ubicacion)
+        elif fila['tension'] == 33:
+            nodos_alta.append(ubicacion)
 
-for indice, fila in datos.iterrows():
-    ubicacion = [fila['latitud'], fila['longitud']]
-    folium.Marker(location=ubicacion, icon=folium.Icon(color='orange')).add_to(mapa)
-    ubicaciones.append(ubicacion)
-    if fila['tension'] <= 20:
-        nodos_medio.append(ubicacion)
-    elif fila['tension'] == 33:
-        nodos_alta.append(ubicacion)
+    g = Graph(len(ubicaciones))
+    for i in range(len(ubicaciones)):
+        for j in range(i + 1, len(ubicaciones)):
+            dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
+            g.add_edge(i, j, dist)
 
-g = Graph(len(ubicaciones))
+    mst_edges = g.kruskal_algo()
 
-for i in range(len(ubicaciones)):
-    for j in range(i + 1, len(ubicaciones)):
-        dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
-        g.add_edge(i, j, dist)
+    for edge in mst_edges:
+        u, v, w = edge
+        folium.PolyLine([ubicaciones[u], ubicaciones[v]], color="blue", weight=2.5, opacity=1).add_to(mapa)
 
-mst_edges = g.kruskal_algo()
+    mapa.save('mapaGrafo.html')
+    webbrowser.open('mapaGrafo.html')
 
-for edge in mst_edges:
-    u, v, w = edge
-    folium.PolyLine([ubicaciones[u], ubicaciones[v]], color="blue", weight=2.5, opacity=1).add_to(mapa)
-
-mapa.save('mapaGrafo.html')
-webbrowser.open('mapaGrafo.html')
-
+if __name__ == "__main__":
+    main()

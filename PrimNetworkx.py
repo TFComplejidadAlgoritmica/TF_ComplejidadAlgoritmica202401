@@ -1,12 +1,10 @@
-# Importamos la librería de heapq para implementar la cola de prioridad
 import heapq
 import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
 from math import radians, sin, cos, sqrt, atan2
 
-
-def haversine(lat1, lon1, lat2, lon2):
+def haversine(lat1, lon1, lon2, lat2):
     R = 6371.0  
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
@@ -15,18 +13,15 @@ def haversine(lat1, lon1, lat2, lon2):
     distance = R * c
     return distance
 
-
 class Graph:
-    # consutructor de la clase
     def __init__(self, vertices):
         self.V = vertices
         self.graph = [[0 for column in range(vertices)] for row in range(vertices)]
-    # agrega una arista al grafo entre dos nodos con un peso dado en la matriz de adyacencia
+        
     def add_edge(self, u, v, w):
         self.graph[u][v] = w
         self.graph[v][u] = w
 
-    # funcion para encontrar el vértice con el menor peso entre vertices que no estan en el MST
     def min_key(self, key, mst_set):
         min = float('inf')
         for v in range(self.V):
@@ -35,61 +30,46 @@ class Graph:
                 min_index = v
         return min_index
 
-    # funcion para imprimir el MST
     def print_mst(self, parent):
         print("Edge \tWeight")
         for i in range(1, self.V):
             print(parent[i], "-", i, "\t", self.graph[i][parent[i]])
 
-    # algoritmo de prim para encontrar el arbol de expansion minima
     def prim_algo(self):
-        # Se inicializan listas para almacenar los pesos clave [key],
-        # el conjunto de vértices del MST [mst_set] 
-        # y los padres de los vértices [parent].
         key = [float('inf')] * self.V
         parent = [None] * self.V
-        # Se inicializa el primer vértice con peso 0
         key[0] = 0
         mst_set = [False] * self.V
-        # Se selecciona el primer vértice como raíz del MST
         parent[0] = -1
         mst_edges = []
 
-        # loop para encontrar el arbol de expansion minima
-        # se itera sobre todos los vertices del grafo
         for cout in range(self.V):
             u = self.min_key(key, mst_set)
             mst_set[u] = True
-            # funcion para encontrar el vertice con el menor peso que aun no esta en el MST
             for v in range(self.V):
                 if self.graph[u][v] > 0 and mst_set[v] == False and key[v] > self.graph[u][v]:
                     key[v] = self.graph[u][v]
                     parent[v] = u
 
-        # Se actualizan los pesos clave, el conjunto del MST y
-        # los padres de los vértices vecinos del vértice seleccionado.
         for i in range(1, self.V):
             mst_edges.append((parent[i], i, self.graph[i][parent[i]]))
 
-        # Se recorren los vértices del MST para construir una lista de aristas con sus pesos
         self.print_mst(parent)
-        # Se imprime la lista de aristas que forman el MST
         return mst_edges
 
 ubicacion_base = [-24.1858, -65.2992]
 
-
 archivo = 'dataset-jujuy.csv'
-datos = pd.read_csv(archivo)
+num_filas = int(sys.argv[1])
 
-datos[['longitud', 'latitud']] = datos['geojson'].str.split(',', expand=True)
-
+datos = pd.read_csv(archivo).head(num_filas)
+datos[['longitud', 'latitud']] = datos['geojson'].str.strip(' "').str.split(',', expand=True)
 datos['latitud'] = datos['latitud'].astype(float)
 datos['longitud'] = datos['longitud'].astype(float)
 
 nodos_medio = []
 nodos_alta = []
-ubicaciones = [ubicacion_base]  
+ubicaciones = [ubicacion_base]
 
 for indice, fila in datos.iterrows():
     ubicacion = [fila['latitud'], fila['longitud']]
@@ -111,7 +91,7 @@ mst_edges = g.prim_algo()
 G = nx.Graph()
 
 for i, ubicacion in enumerate(ubicaciones):
-    G.add_node(i, pos=(ubicacion[1], ubicacion[0])) 
+    G.add_node(i, pos=(ubicacion[1], ubicacion[0]))
 
 for i in range(len(ubicaciones)):
     for j in range(i + 1, len(ubicaciones)):
@@ -130,7 +110,7 @@ nx.draw(G, pos=node_pos, with_labels=False, node_size=20, edge_color='blue')
 plt.title('Grafo Original')
 
 plt.subplot(1, 2, 2)
-mst_pos = nx.spring_layout(MST, seed=42)  # Layout para mostrar el MST de manera más clara
+mst_pos = nx.spring_layout(MST, seed=42)
 nx.draw(MST, pos=mst_pos, with_labels=False, node_size=20, edge_color='red')
 plt.title('MST de Prim')
 
