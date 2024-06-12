@@ -1,6 +1,7 @@
 import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
+import sys
 from math import radians, sin, cos, sqrt, atan2
 
 def haversine(lat1, lon1, lat2, lon2):
@@ -73,61 +74,55 @@ class Graph:
 
         return result
 
-ubicacion_base = [-24.1858, -65.2992]
+def main(num_datos):
+    ubicacion_base = [-24.1858, -65.2992]
 
-archivo = 'dataset-jujuy.csv'
-datos = pd.read_csv(archivo)
+    archivo = 'dataset-jujuy.csv'
+    datos = pd.read_csv(archivo, nrows=num_datos)
 
-datos[['longitud', 'latitud']] = datos['geojson'].str.split(',', expand=True)
+    datos[['longitud', 'latitud']] = datos['geojson'].str.split(',', expand=True)
 
-datos['latitud'] = datos['latitud'].astype(float)
-datos['longitud'] = datos['longitud'].astype(float)
+    datos['latitud'] = datos['latitud'].astype(float)
+    datos['longitud'] = datos['longitud'].astype(float)
 
-nodos_medio = []
-nodos_alta = []
-ubicaciones = [ubicacion_base]  
+    ubicaciones = [ubicacion_base]  
+    for indice, fila in datos.iterrows():
+        ubicacion = [fila['latitud'], fila['longitud']]
+        ubicaciones.append(ubicacion)
 
-for indice, fila in datos.iterrows():
-    ubicacion = [fila['latitud'], fila['longitud']]
-    ubicaciones.append(ubicacion)
-    if fila['tension'] <= 20:
-        nodos_medio.append(ubicacion)
-    elif fila['tension'] == 33:
-        nodos_alta.append(ubicacion)
+    g = Graph(len(ubicaciones))
+    for i in range(len(ubicaciones)):
+        for j in range(i + 1, len(ubicaciones)):
+            dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
+            g.add_edge(i, j, dist)
 
-g = Graph(len(ubicaciones))
+    mst_edges = g.kruskal_algo()
 
-for i in range(len(ubicaciones)):
-    for j in range(i + 1, len(ubicaciones)):
-        dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
-        g.add_edge(i, j, dist)
+    G = nx.Graph()
 
-mst_edges = g.kruskal_algo()
+    for i, ubicacion in enumerate(ubicaciones):
+        G.add_node(i, pos=(ubicacion[1], ubicacion[0])) 
 
-G = nx.Graph()
+    for edge in mst_edges:
+        u, v, w = edge
+        G.add_edge(u, v, weight=w)
 
-for i, ubicacion in enumerate(ubicaciones):
-    G.add_node(i, pos=(ubicacion[1], ubicacion[0])) 
+    plt.figure(figsize=(14, 7))
+    plt.subplot(1, 2, 1)
+    node_pos = nx.get_node_attributes(G, 'pos')
+    nx.draw(G, pos=node_pos, with_labels=False, node_size=20, edge_color='blue')
+    plt.title('Grafo Original')
 
-for i in range(len(ubicaciones)):
-    for j in range(i + 1, len(ubicaciones)):
-        dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
-        G.add_edge(i, j, weight=dist)
+    plt.subplot(1, 2, 2)
+    mst_pos = nx.spring_layout(G, seed=42)  # Layout para mostrar el MST de manera más clara
+    nx.draw(G, pos=mst_pos, with_labels=False, node_size=20, edge_color='red')
+    plt.title('MST de Kruskal')
 
-MST = nx.Graph()
-for edge in mst_edges:
-    u, v, w = edge
-    MST.add_edge(u, v, weight=w)
+    plt.show()
 
-plt.figure(figsize=(14, 7))
-plt.subplot(1, 2, 1)
-node_pos = nx.get_node_attributes(G, 'pos')
-nx.draw(G, pos=node_pos, with_labels=False, node_size=20, edge_color='blue')
-plt.title('Grafo Original')
-
-plt.subplot(1, 2, 2)
-mst_pos = nx.spring_layout(MST, seed=42)  # Layout para mostrar el MST de manera más clara
-nx.draw(MST, pos=mst_pos, with_labels=False, node_size=20, edge_color='red')
-plt.title('MST de Kruskal')
-
-plt.show()
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Uso: python finalKruskalNetworkx.py <num_datos>")
+    else:
+        num_datos = int(sys.argv[1])
+        main(num_datos)
