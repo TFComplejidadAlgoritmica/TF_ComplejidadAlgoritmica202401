@@ -2,6 +2,7 @@ import pandas as pd
 import folium
 import webbrowser
 from math import radians, sin, cos, sqrt, atan2
+import sys
 
 # Función para calcular la distancia Haversine entre dos puntos geográficos
 def haversine(lat1, lon1, lat2, lon2):
@@ -54,54 +55,62 @@ class Graph:
 
         return mst_edges
 
-# Coordenadas base
-ubicacion_base = [-24.1858, -65.2992]
+def main(num_datos):
+    # Coordenadas base
+    ubicacion_base = [-24.1858, -65.2992]
 
-# Crear el mapa centrado en la ubicación base
-mapa = folium.Map(location=ubicacion_base, zoom_start=13)
+    # Crear el mapa centrado en la ubicación base
+    mapa = folium.Map(location=ubicacion_base, zoom_start=13)
 
-# Leer los datos del archivo CSV
-archivo = 'dataset-jujuy.csv'
-datos = pd.read_csv(archivo)
+    # Leer los datos del archivo CSV
+    archivo = 'dataset-jujuy.csv'
+    datos = pd.read_csv(archivo, nrows=num_datos)
 
-# Extraer y convertir las coordenadas de los datos
-datos[['longitud', 'latitud']] = datos['geojson'].str.strip(' "').str.split(',', expand=True)
-datos['latitud'] = datos['latitud'].astype(float)
-datos['longitud'] = datos['longitud'].astype(float)
+    # Extraer y convertir las coordenadas de los datos
+    datos[['longitud', 'latitud']] = datos['geojson'].str.strip(' "').str.split(',', expand=True)
+    datos['latitud'] = datos['latitud'].astype(float)
+    datos['longitud'] = datos['longitud'].astype(float)
 
-folium.Marker(location=ubicacion_base, icon=folium.Icon(color='red')).add_to(mapa)
+    folium.Marker(location=ubicacion_base, icon=folium.Icon(color='red')).add_to(mapa)
 
-ubicaciones = [ubicacion_base]
-nodos_medio = []
-nodos_alta = []
+    ubicaciones = [ubicacion_base]
+    nodos_medio = []
+    nodos_alta = []
 
-for indice, fila in datos.iterrows():
-    ubicacion = [fila['latitud'], fila['longitud']]
-    folium.Marker(location=ubicacion, icon=folium.Icon(color='orange')).add_to(mapa)
-    ubicaciones.append(ubicacion)
-    
-    if fila['tension'] <= 20:
-        nodos_medio.append(ubicacion)
-    elif fila['tension'] == 33:
-        nodos_alta.append(ubicacion)
+    for indice, fila in datos.iterrows():
+        ubicacion = [fila['latitud'], fila['longitud']]
+        folium.Marker(location=ubicacion, icon=folium.Icon(color='orange')).add_to(mapa)
+        ubicaciones.append(ubicacion)
 
-g = Graph(len(ubicaciones))
+        if fila['tension'] <= 20:
+            nodos_medio.append(ubicacion)
+        elif fila['tension'] == 33:
+            nodos_alta.append(ubicacion)
 
-for i in range(len(ubicaciones)):
-    for j in range(i + 1, len(ubicaciones)):
-        dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
-        g.add_edge(i, j, dist)
+    g = Graph(len(ubicaciones))
 
-mst_edges = g.prim_algo()
+    for i in range(len(ubicaciones)):
+        for j in range(i + 1, len(ubicaciones)):
+            dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
+            g.add_edge(i, j, dist)
 
-total_weight = 0
+    mst_edges = g.prim_algo()
 
-for edge in mst_edges:
-    u, v, w = edge
-    folium.PolyLine([ubicaciones[u], ubicaciones[v]], color="blue", weight=2.5, opacity=1).add_to(mapa)
-    total_weight += w
+    total_weight = 0
 
-print("Total weight of MST: ", total_weight)
+    for edge in mst_edges:
+        u, v, w = edge
+        folium.PolyLine([ubicaciones[u], ubicaciones[v]], color="blue", weight=2.5, opacity=1).add_to(mapa)
+        total_weight += w
 
-mapa.save('mapaGrafo.html')
-webbrowser.open('mapaGrafo.html')
+    print("Total weight of MST: ", total_weight)
+
+    mapa.save('mapaGrafo.html')
+    webbrowser.open('mapaGrafo.html')
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Uso: python PrimFolium.py <num_datos>")
+    else:
+        num_datos = int(sys.argv[1])
+        main(num_datos)
