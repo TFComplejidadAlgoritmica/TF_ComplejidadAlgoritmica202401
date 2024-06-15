@@ -56,17 +56,13 @@ class Graph:
         return mst_edges
 
 def main(num_datos):
-    # Coordenadas base
     ubicacion_base = [-24.1858, -65.2992]
 
-    # Crear el mapa centrado en la ubicación base
     mapa = folium.Map(location=ubicacion_base, zoom_start=13)
 
-    # Leer los datos del archivo CSV
     archivo = 'dataset-jujuy.csv'
     datos = pd.read_csv(archivo, nrows=num_datos)
 
-    # Extraer y convertir las coordenadas de los datos
     datos[['longitud', 'latitud']] = datos['geojson'].str.strip(' "').str.split(',', expand=True)
     datos['latitud'] = datos['latitud'].astype(float)
     datos['longitud'] = datos['longitud'].astype(float)
