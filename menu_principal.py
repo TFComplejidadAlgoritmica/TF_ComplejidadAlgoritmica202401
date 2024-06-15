@@ -26,7 +26,6 @@ class ScriptExecutorApp:
         self.salir_btn = tk.Button(root, text="Salir", command=root.quit)
         self.salir_btn.pack(pady=20)
 
-        # Frame para contener los botones de opciones
         self.opciones_frame = tk.LabelFrame(root, text="Opciones de Filtrado:")
         self.opciones_frame.pack(pady=10)
 

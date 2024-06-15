@@ -89,7 +89,6 @@ def main():
         popup_anchor=(0, -15)  
     )
 
-    # Añadir marcador con ícono personalizado a mapa
     folium.Marker(
         location=ubicacion_base,
         icon=icono_personalizado

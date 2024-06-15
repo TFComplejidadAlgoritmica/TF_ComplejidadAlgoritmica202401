@@ -60,7 +60,6 @@ def main(num_datos):
 
     mapa = folium.Map(location=ubicacion_base, zoom_start=13)
 
-    # Ruta a tu imagen personalizada para el marcador de ubicación base
     imagen_personalizada = 'plantaPrincipal.jpg'
     icono_personalizado = folium.features.CustomIcon(icon_image=imagen_personalizada, icon_size=(30, 30))
     folium.Marker(location=ubicacion_base, icon=icono_personalizado).add_to(mapa)

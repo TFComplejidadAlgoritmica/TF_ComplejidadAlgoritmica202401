@@ -109,14 +109,14 @@ def main(num_filas):
     plt.figure(figsize=(14, 7))
 
     plt.subplot(1, 2, 1)
-    node_pos = nx.spring_layout(G)  # Utilizar diseño de disposición de fuerza
+    node_pos = nx.spring_layout(G)  
     nx.draw(G, pos=node_pos, with_labels=True, node_size=20, edge_color='blue')
     labels = nx.get_edge_attributes(G, 'weight')
     nx.draw_networkx_edge_labels(G, pos=node_pos, edge_labels=labels)
     plt.title('Grafo Original')
 
     plt.subplot(1, 2, 2)
-    mst_pos = nx.spring_layout(MST, pos=node_pos)  # Utilizar el mismo diseño para MST
+    mst_pos = nx.spring_layout(MST, pos=node_pos)  
     nx.draw(MST, pos=mst_pos, with_labels=True, node_size=20, edge_color='red')
     mst_labels = nx.get_edge_attributes(MST, 'weight')
     nx.draw_networkx_edge_labels(MST, pos=mst_pos, edge_labels=mst_labels)

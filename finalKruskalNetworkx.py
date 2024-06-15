@@ -14,7 +14,6 @@ def haversine(lat1, lon1, lat2, lon2):
     distance = R * c
     return distance
 
-# Clase para el grafo y el algoritmo de Kruskal
 class Graph:
     def __init__(self, vertices):
         self.V = vertices
@@ -109,7 +108,7 @@ def main(num_datos):
     plt.title('Grafo Original')
 
     plt.subplot(1, 2, 2)
-    mst_pos = nx.spring_layout(G, seed=42)  # Layout para mostrar el MST de manera más clara
+    mst_pos = nx.spring_layout(G, seed=42)  
     nx.draw(G, pos=mst_pos, with_labels=False, node_size=20, edge_color='red')
     plt.title('MST de Kruskal\nPeso total: {:.2f} km'.format(mst_total_weight))
 
