@@ -60,14 +60,17 @@ def main(num_datos):
 
     mapa = folium.Map(location=ubicacion_base, zoom_start=13)
 
+    # Ruta a tu imagen personalizada para el marcador de ubicación base
+    imagen_personalizada = 'plantaPrincipal.jpg'
+    icono_personalizado = folium.features.CustomIcon(icon_image=imagen_personalizada, icon_size=(30, 30))
+    folium.Marker(location=ubicacion_base, icon=icono_personalizado).add_to(mapa)
+
     archivo = 'dataset-jujuy.csv'
     datos = pd.read_csv(archivo, nrows=num_datos)
 
     datos[['longitud', 'latitud']] = datos['geojson'].str.strip(' "').str.split(',', expand=True)
     datos['latitud'] = datos['latitud'].astype(float)
     datos['longitud'] = datos['longitud'].astype(float)
-
-    folium.Marker(location=ubicacion_base, icon=folium.Icon(color='red')).add_to(mapa)
 
     ubicaciones = [ubicacion_base]
     nodos_medio = []
