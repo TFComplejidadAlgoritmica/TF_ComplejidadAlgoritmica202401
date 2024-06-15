@@ -80,14 +80,27 @@ def main():
 
     mapa = folium.Map(location=ubicacion_base, zoom_start=13)
 
+    ruta_icono_personalizado = 'plantaPrincipal.jpg'
+
+    icono_personalizado = folium.CustomIcon(
+        ruta_icono_personalizado,
+        icon_size=(70, 70), 
+        icon_anchor=(15, 15), 
+        popup_anchor=(0, -15)  
+    )
+
+    # Añadir marcador con ícono personalizado a mapa
+    folium.Marker(
+        location=ubicacion_base,
+        icon=icono_personalizado
+    ).add_to(mapa)
+
     archivo = 'dataset-jujuy.csv'
     datos = pd.read_csv(archivo, nrows=num_datos)
 
     datos[['longitud', 'latitud']] = datos['geojson'].str.split(',', expand=True)
     datos['latitud'] = datos['latitud'].astype(float)
     datos['longitud'] = datos['longitud'].astype(float)
-
-    folium.Marker(location=ubicacion_base, icon=folium.Icon(color='red')).add_to(mapa)
 
     nodos_medio = []
     nodos_alta = []
