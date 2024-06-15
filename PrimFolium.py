@@ -41,7 +41,7 @@ class Graph:
         parent[0] = -1
         mst_edges = []
 
-        for cout in range(self.V):
+        for _ in range(self.V):
             u = self.min_key(key, mst_set)
             mst_set[u] = True
 

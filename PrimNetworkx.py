@@ -9,7 +9,7 @@ import sys
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371.0  # Radio de la Tierra en km
     dlat = radians(lat2 - lat1)
-    dlon = radians(lon1 - lon2)
+    dlon = radians(lon2 - lon1)
     a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
     distance = R * c
@@ -23,7 +23,7 @@ class Graph:
         
     def add_edge(self, u, v, w):
         self.graph[u][v] = w
-        self.graph[v][u] = w
+        self.graph[v][u] = w  # Asegura que sea bidireccional
 
     def min_key(self, key, mst_set):
         min_val = float('inf')
@@ -42,7 +42,7 @@ class Graph:
         parent[0] = -1
         mst_edges = []
 
-        for cout in range(self.V):
+        for _ in range(self.V):
             u = self.min_key(key, mst_set)
             mst_set[u] = True
             for v in range(self.V):
@@ -84,7 +84,7 @@ def main(num_filas):
 
     for i in range(len(ubicaciones)):
         for j in range(i + 1, len(ubicaciones)):
-            dist = round(haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1]))
+            dist = round(haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1]), 2)
             g.add_edge(i, j, dist)
 
     mst_edges = g.prim_algo()
@@ -96,7 +96,7 @@ def main(num_filas):
 
     for i in range(len(ubicaciones)):
         for j in range(i + 1, len(ubicaciones)):
-            dist = round(haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1]))
+            dist = round(haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1]), 2)
             G.add_edge(i, j, weight=dist)
 
     MST = nx.Graph()
@@ -104,7 +104,7 @@ def main(num_filas):
     for edge in mst_edges:
         u, v, w = edge
         MST.add_edge(u, v, weight=w)
-        mst_total_weight += haversine(ubicaciones[u][0], ubicaciones[u][1], ubicaciones[v][0], ubicaciones[v][1])
+        mst_total_weight += w
 
     plt.figure(figsize=(14, 7))
 
@@ -117,16 +117,16 @@ def main(num_filas):
 
     plt.subplot(1, 2, 2)
     mst_pos = nx.spring_layout(MST, pos=node_pos)  # Utilizar el mismo diseño para MST
-    nx.draw(MST, pos=node_pos, with_labels=True, node_size=20, edge_color='red')
+    nx.draw(MST, pos=mst_pos, with_labels=True, node_size=20, edge_color='red')
     mst_labels = nx.get_edge_attributes(MST, 'weight')
-    nx.draw_networkx_edge_labels(MST, pos=node_pos, edge_labels=mst_labels)
+    nx.draw_networkx_edge_labels(MST, pos=mst_pos, edge_labels=mst_labels)
     plt.title('MST de Prim\nPeso total: {:.2f} km'.format(mst_total_weight))
 
     plt.show()
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Uso: python PrimFolium.py <num_filas>")
+        print("Uso: python PrimNetwork.py <num_filas>")
     else:
         num_filas = int(sys.argv[1])
         main(num_filas)

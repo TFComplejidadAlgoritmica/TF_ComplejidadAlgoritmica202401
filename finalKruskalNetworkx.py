@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import sys
 from math import radians, sin, cos, sqrt, atan2
 
+# Función para calcular la distancia Haversine entre dos puntos geográficos
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371.0  
     dlat = radians(lat2 - lat1)
@@ -13,6 +14,7 @@ def haversine(lat1, lon1, lat2, lon2):
     distance = R * c
     return distance
 
+# Clase para el grafo y el algoritmo de Kruskal
 class Graph:
     def __init__(self, vertices):
         self.V = vertices
