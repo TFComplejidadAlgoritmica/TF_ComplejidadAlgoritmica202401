@@ -73,20 +73,10 @@ class Graph:
 
         return result
 
-def main():
-    num_datos = int(sys.argv[1])
-
+def cargar_y_procesar_datos(archivo, num_filas):
     ubicacion_base = [-24.1858, -65.2992]
 
-    mapa = folium.Map(location=ubicacion_base, zoom_start=13)
-
-    imagen_personalizada = 'plantaPrincipal.jpg'
-    icono_personalizado = folium.features.CustomIcon(icon_image=imagen_personalizada, icon_size=(70, 70))
-    folium.Marker(location=ubicacion_base, icon=icono_personalizado).add_to(mapa)
-
-    archivo = 'dataset-jujuy.csv'
-    datos = pd.read_csv(archivo, nrows=num_datos)
-
+    datos = pd.read_csv(archivo, nrows=num_filas)
     datos[['longitud', 'latitud']] = datos['geojson'].str.strip(' "').str.split(',', expand=True)
     datos['latitud'] = datos['latitud'].astype(float)
     datos['longitud'] = datos['longitud'].astype(float)
@@ -97,9 +87,7 @@ def main():
 
     for indice, fila in datos.iterrows():
         ubicacion = [fila['latitud'], fila['longitud']]
-        folium.Marker(location=ubicacion, icon=folium.Icon(color='orange')).add_to(mapa)
         ubicaciones.append(ubicacion)
-
         if fila['tension'] <= 20:
             nodos_medio.append(ubicacion)
         elif fila['tension'] == 33:
@@ -120,7 +108,23 @@ def main():
         for j in range(i + 1, len(ubicaciones)):
             dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
             g.add_edge(i, j, dist)
-            
+
+    return g, ubicaciones
+
+def main():
+    num_datos = int(sys.argv[1])
+
+    mapa = folium.Map(location=[-24.1858, -65.2992], zoom_start=13)
+    imagen_personalizada = 'plantaPrincipal.jpg'
+    icono_personalizado = folium.features.CustomIcon(icon_image=imagen_personalizada, icon_size=(70, 70))
+    folium.Marker(location=[-24.1858, -65.2992], icon=icono_personalizado).add_to(mapa)
+
+    archivo = 'dataset-jujuy.csv'
+    g, ubicaciones = cargar_y_procesar_datos(archivo, num_datos)
+    
+    for ubicacion in ubicaciones[1:]:
+        folium.Marker(location=ubicacion, icon=folium.Icon(color='orange')).add_to(mapa)
+
     mst_edges = g.kruskal_algo()
 
     for edge in mst_edges:

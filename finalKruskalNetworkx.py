@@ -5,7 +5,7 @@ import sys
 from math import radians, sin, cos, sqrt, atan2
 
 def haversine(lat1, lon1, lat2, lon2):
-    R = 6371.0  
+    R = 6371.0 
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
     a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
@@ -85,16 +85,16 @@ def main(num_datos):
 
     if nodos_alta:
         for nodo_alta in nodos_alta:
-            dist = round(haversine(ubicacion_base[0], ubicacion_base[1], nodo_alta[0], nodo_alta[1]), 2)
+            dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_alta[0], nodo_alta[1])
             g.add_edge(0, ubicaciones.index(nodo_alta), dist)
     else:
         for nodo_medio in nodos_medio:
-            dist = round(haversine(ubicacion_base[0], ubicacion_base[1], nodo_medio[0], nodo_medio[1]), 2)
+            dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_medio[0], nodo_medio[1])
             g.add_edge(0, ubicaciones.index(nodo_medio), dist)
 
     for i in range(1, len(ubicaciones)):
         for j in range(i + 1, len(ubicaciones)):
-            dist = round(haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1]), 2)
+            dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
             g.add_edge(i, j, dist)
 
     mst_edges, mst_total_weight = g.kruskal_algo()
