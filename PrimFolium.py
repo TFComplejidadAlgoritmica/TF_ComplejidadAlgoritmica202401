@@ -3,10 +3,10 @@ import folium
 import webbrowser
 from math import radians, sin, cos, sqrt, atan2
 import sys
+import heapq
 
-# Función para calcular la distancia Haversine entre dos puntos geográficos
 def haversine(lat1, lon1, lat2, lon2):
-    R = 6371.0  # Radio de la Tierra en km
+    R = 6371.0 
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
     a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
@@ -14,44 +14,38 @@ def haversine(lat1, lon1, lat2, lon2):
     distance = R * c
     return distance
 
-# Clase para el grafo y el algoritmo de Prim
 class Graph:
     def __init__(self, vertices):
         self.V = vertices
-        self.graph = [[0 for _ in range(vertices)] for _ in range(vertices)]
+        self.graph = [[] for _ in range(vertices)]
 
     def add_edge(self, u, v, w):
-        self.graph[u][v] = w
-        self.graph[v][u] = w
-
-    def min_key(self, key, mst_set):
-        min_val = float('inf')
-        min_index = -1
-        for v in range(self.V):
-            if key[v] < min_val and not mst_set[v]:
-                min_val = key[v]
-                min_index = v
-        return min_index
+        self.graph[u].append((v, w))
+        self.graph[v].append((u, w))
 
     def prim_algo(self):
+        min_heap = []
+        heapq.heapify(min_heap) 
+
         key = [float('inf')] * self.V
         parent = [None] * self.V
-        key[0] = 0
         mst_set = [False] * self.V
-        parent[0] = -1
-        mst_edges = []
 
-        for _ in range(self.V):
-            u = self.min_key(key, mst_set)
+        key[0] = 0
+        heapq.heappush(min_heap, (0, 0)) 
+        while min_heap:
+            current_key, u = heapq.heappop(min_heap)
             mst_set[u] = True
 
-            for v in range(self.V):
-                if self.graph[u][v] > 0 and not mst_set[v] and key[v] > self.graph[u][v]:
-                    key[v] = self.graph[u][v]
+            for v, weight in self.graph[u]:
+                if not mst_set[v] and weight < key[v]:
+                    key[v] = weight
                     parent[v] = u
+                    heapq.heappush(min_heap, (key[v], v))
 
+        mst_edges = []
         for i in range(1, self.V):
-            mst_edges.append((parent[i], i, self.graph[i][parent[i]]))
+            mst_edges.append((parent[i], i, key[i]))
 
         return mst_edges
 
