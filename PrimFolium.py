@@ -114,6 +114,9 @@ def main(num_datos):
 
     mapa.save('mapaGrafo.html')
     webbrowser.open('mapaGrafo.html')
+    print("Matriz de adyacencia:")
+    for row in g.graph:
+        print(row)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

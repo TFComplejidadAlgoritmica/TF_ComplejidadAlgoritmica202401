@@ -98,34 +98,36 @@ def main(num_filas):
     for i, ubicacion in enumerate(ubicaciones):
         G.add_node(i, pos=(ubicacion[1], ubicacion[0]))
 
-    for i in range(len(ubicaciones)):
-        for j in range(i + 1, len(ubicaciones)):
-            dist = round(haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1]), 2)
-            G.add_edge(i, j, weight=dist)
-
-    MST = nx.Graph()
-    mst_total_weight = 0.0
     for edge in mst_edges:
         u, v, w = edge
-        MST.add_edge(u, v, weight=w)
-        mst_total_weight += w
+        G.add_edge(u, v, weight=w)
+
+    mst_total_weight = sum(w for u, v, w in mst_edges)
 
     plt.figure(figsize=(14, 7))
 
     plt.subplot(1, 2, 1)
-    node_pos = nx.spring_layout(G, seed=42) 
+    node_pos = nx.spring_layout(G, seed=42)  
     nx.draw(G, pos=node_pos, with_labels=True, node_size=20, edge_color='blue')
     labels = nx.get_edge_attributes(G, 'weight')
     nx.draw_networkx_edge_labels(G, pos=node_pos, edge_labels=labels)
     plt.title('Grafo Original')
 
     plt.subplot(1, 2, 2)
+    MST = nx.Graph()
+    for edge in mst_edges:
+        u, v, w = edge
+        MST.add_edge(u, v, weight=w)
     nx.draw(MST, pos=node_pos, with_labels=True, node_size=20, edge_color='red')
     mst_labels = nx.get_edge_attributes(MST, 'weight')
     nx.draw_networkx_edge_labels(MST, pos=node_pos, edge_labels=mst_labels)
     plt.title('MST de Prim\nPeso total: {:.2f} km'.format(mst_total_weight))
 
+    print("Matriz de adyacencia:")
+    for row in g.graph:
+        print(row)
     plt.show()
+    
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
