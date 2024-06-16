@@ -55,19 +55,29 @@ class Graph:
 
         return mst_edges
 
-def cargar_y_procesar_datos(archivo, num_filas):
-    datos = pd.read_csv(archivo, nrows=num_filas)
+def main(num_datos):
+    ubicacion_base = [-24.1858, -65.2992]
+
+    mapa = folium.Map(location=ubicacion_base, zoom_start=13)
+
+    imagen_personalizada = 'plantaPrincipal.jpg'
+    icono_personalizado = folium.features.CustomIcon(icon_image=imagen_personalizada, icon_size=(70, 70))
+    folium.Marker(location=ubicacion_base, icon=icono_personalizado).add_to(mapa)
+
+    archivo = 'dataset-jujuy.csv'
+    datos = pd.read_csv(archivo, nrows=num_datos)
+
     datos[['longitud', 'latitud']] = datos['geojson'].str.strip(' "').str.split(',', expand=True)
     datos['latitud'] = datos['latitud'].astype(float)
     datos['longitud'] = datos['longitud'].astype(float)
 
-    ubicacion_base = [-24.1858, -65.2992]
     ubicaciones = [ubicacion_base]
     nodos_medio = []
     nodos_alta = []
 
     for indice, fila in datos.iterrows():
         ubicacion = [fila['latitud'], fila['longitud']]
+        folium.Marker(location=ubicacion, icon=folium.Icon(color='orange')).add_to(mapa)
         ubicaciones.append(ubicacion)
 
         if fila['tension'] <= 20:
@@ -91,29 +101,7 @@ def cargar_y_procesar_datos(archivo, num_filas):
             dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
             g.add_edge(i, j, dist)
 
-    return datos, g
-
-def main(num_datos):
-    ubicacion_base = [-24.1858, -65.2992]
-
-    mapa = folium.Map(location=ubicacion_base, zoom_start=13)
-
-    imagen_personalizada = 'plantaPrincipal.jpg'
-    icono_personalizado = folium.features.CustomIcon(icon_image=imagen_personalizada, icon_size=(70, 70))
-    folium.Marker(location=ubicacion_base, icon=icono_personalizado).add_to(mapa)
-
-    archivo = 'dataset-jujuy.csv'
-    datos, g = cargar_y_procesar_datos(archivo, num_datos) 
-
-    ubicaciones = [ubicacion_base]
-
-    for indice, fila in datos.iterrows():
-        ubicacion = [fila['latitud'], fila['longitud']]
-        # Añade cada ubicación a la lista de ubicaciones
-        ubicaciones.append(ubicacion)
-        folium.Marker(location=ubicacion, icon=folium.Icon(color='orange')).add_to(mapa)
-
-    mst_edges = g.prim_algo()  
+    mst_edges = g.prim_algo()
 
     total_weight = 0
 
