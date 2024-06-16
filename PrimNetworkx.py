@@ -1,4 +1,3 @@
-import heapq
 import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -20,7 +19,7 @@ class Graph:
     def __init__(self, vertices):
         self.V = vertices
         self.graph = [[0 for _ in range(vertices)] for _ in range(vertices)]
-        
+
     def add_edge(self, u, v, w):
         self.graph[u][v] = w
         self.graph[v][u] = w  # Asegura que sea bidireccional
@@ -82,7 +81,18 @@ def main(num_filas):
 
     g = Graph(len(ubicaciones))
 
-    for i in range(len(ubicaciones)):
+    # Conectar ubicación base a nodos de alta tensión primero, si existen
+    if nodos_alta:
+        for nodo_alta in nodos_alta:
+            dist = round(haversine(ubicacion_base[0], ubicacion_base[1], nodo_alta[0], nodo_alta[1]), 2)
+            g.add_edge(0, ubicaciones.index(nodo_alta), dist)
+    else:
+        for nodo_medio in nodos_medio:
+            dist = round(haversine(ubicacion_base[0], ubicacion_base[1], nodo_medio[0], nodo_medio[1]), 2)
+            g.add_edge(0, ubicaciones.index(nodo_medio), dist)
+
+    # Añadir aristas entre todos los demás nodos
+    for i in range(1, len(ubicaciones)):
         for j in range(i + 1, len(ubicaciones)):
             dist = round(haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1]), 2)
             g.add_edge(i, j, dist)
@@ -109,17 +119,16 @@ def main(num_filas):
     plt.figure(figsize=(14, 7))
 
     plt.subplot(1, 2, 1)
-    node_pos = nx.spring_layout(G)  
+    node_pos = nx.spring_layout(G, seed=42)  # Semilla para layout consistente
     nx.draw(G, pos=node_pos, with_labels=True, node_size=20, edge_color='blue')
     labels = nx.get_edge_attributes(G, 'weight')
     nx.draw_networkx_edge_labels(G, pos=node_pos, edge_labels=labels)
     plt.title('Grafo Original')
 
     plt.subplot(1, 2, 2)
-    mst_pos = nx.spring_layout(MST, pos=node_pos)  
-    nx.draw(MST, pos=mst_pos, with_labels=True, node_size=20, edge_color='red')
+    nx.draw(MST, pos=node_pos, with_labels=True, node_size=20, edge_color='red')
     mst_labels = nx.get_edge_attributes(MST, 'weight')
-    nx.draw_networkx_edge_labels(MST, pos=mst_pos, edge_labels=mst_labels)
+    nx.draw_networkx_edge_labels(MST, pos=node_pos, edge_labels=mst_labels)
     plt.title('MST de Prim\nPeso total: {:.2f} km'.format(mst_total_weight))
 
     plt.show()

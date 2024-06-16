@@ -80,47 +80,49 @@ def main():
 
     mapa = folium.Map(location=ubicacion_base, zoom_start=13)
 
-    ruta_icono_personalizado = 'plantaPrincipal.jpg'
-
-    icono_personalizado = folium.CustomIcon(
-        ruta_icono_personalizado,
-        icon_size=(70, 70), 
-        icon_anchor=(15, 15), 
-        popup_anchor=(0, -15)  
-    )
-
-    folium.Marker(
-        location=ubicacion_base,
-        icon=icono_personalizado
-    ).add_to(mapa)
+    imagen_personalizada = 'plantaPrincipal.jpg'
+    icono_personalizado = folium.features.CustomIcon(icon_image=imagen_personalizada, icon_size=(70, 70))
+    folium.Marker(location=ubicacion_base, icon=icono_personalizado).add_to(mapa)
 
     archivo = 'dataset-jujuy.csv'
     datos = pd.read_csv(archivo, nrows=num_datos)
 
-    datos[['longitud', 'latitud']] = datos['geojson'].str.split(',', expand=True)
+    datos[['longitud', 'latitud']] = datos['geojson'].str.strip(' "').str.split(',', expand=True)
     datos['latitud'] = datos['latitud'].astype(float)
     datos['longitud'] = datos['longitud'].astype(float)
 
+    ubicaciones = [ubicacion_base]
     nodos_medio = []
     nodos_alta = []
-    ubicaciones = [ubicacion_base]  
 
     for indice, fila in datos.iterrows():
         ubicacion = [fila['latitud'], fila['longitud']]
         folium.Marker(location=ubicacion, icon=folium.Icon(color='orange')).add_to(mapa)
         ubicaciones.append(ubicacion)
-        
+
         if fila['tension'] <= 20:
             nodos_medio.append(ubicacion)
         elif fila['tension'] == 33:
             nodos_alta.append(ubicacion)
 
     g = Graph(len(ubicaciones))
-    for i in range(len(ubicaciones)):
+
+    # Conectar ubicación base a nodos de alta tensión primero, si existen
+    if nodos_alta:
+        for nodo_alta in nodos_alta:
+            dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_alta[0], nodo_alta[1])
+            g.add_edge(0, ubicaciones.index(nodo_alta), dist)
+    else:
+        for nodo_medio in nodos_medio:
+            dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_medio[0], nodo_medio[1])
+            g.add_edge(0, ubicaciones.index(nodo_medio), dist)
+
+    # Añadir aristas entre todos los demás nodos
+    for i in range(1, len(ubicaciones)):
         for j in range(i + 1, len(ubicaciones)):
             dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
             g.add_edge(i, j, dist)
-
+            
     mst_edges = g.kruskal_algo()
 
     for edge in mst_edges:

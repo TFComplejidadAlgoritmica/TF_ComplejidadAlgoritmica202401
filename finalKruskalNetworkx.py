@@ -63,31 +63,43 @@ class Graph:
 def main(num_datos):
     ubicacion_base = [-24.1858, -65.2992]
 
+    # Leer los datos del archivo CSV
     archivo = 'dataset-jujuy.csv'
     datos = pd.read_csv(archivo, nrows=num_datos)
 
-    datos[['longitud', 'latitud']] = datos['geojson'].str.split(',', expand=True)
-
+    # Extraer y convertir las coordenadas de los datos
+    datos[['longitud', 'latitud']] = datos['geojson'].str.strip(' "').str.split(',', expand=True)
     datos['latitud'] = datos['latitud'].astype(float)
     datos['longitud'] = datos['longitud'].astype(float)
 
+    ubicaciones = [ubicacion_base]
     nodos_medio = []
     nodos_alta = []
-    ubicaciones = [ubicacion_base]  
 
     for indice, fila in datos.iterrows():
         ubicacion = [fila['latitud'], fila['longitud']]
         ubicaciones.append(ubicacion)
-        
         if fila['tension'] <= 20:
             nodos_medio.append(ubicacion)
         elif fila['tension'] == 33:
             nodos_alta.append(ubicacion)
 
     g = Graph(len(ubicaciones))
-    for i in range(len(ubicaciones)):
+
+    # Conectar ubicación base a nodos de alta tensión primero, si existen
+    if nodos_alta:
+        for nodo_alta in nodos_alta:
+            dist = round(haversine(ubicacion_base[0], ubicacion_base[1], nodo_alta[0], nodo_alta[1]), 2)
+            g.add_edge(0, ubicaciones.index(nodo_alta), dist)
+    else:
+        for nodo_medio in nodos_medio:
+            dist = round(haversine(ubicacion_base[0], ubicacion_base[1], nodo_medio[0], nodo_medio[1]), 2)
+            g.add_edge(0, ubicaciones.index(nodo_medio), dist)
+
+    # Añadir aristas entre todos los demás nodos
+    for i in range(1, len(ubicaciones)):
         for j in range(i + 1, len(ubicaciones)):
-            dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
+            dist = round(haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1]), 2)
             g.add_edge(i, j, dist)
 
     mst_edges, mst_total_weight = g.kruskal_algo()
