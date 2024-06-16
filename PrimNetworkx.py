@@ -4,9 +4,8 @@ import matplotlib.pyplot as plt
 from math import radians, sin, cos, sqrt, atan2
 import sys
 
-# Función para calcular la distancia Haversine entre dos puntos geográficos
 def haversine(lat1, lon1, lat2, lon2):
-    R = 6371.0  # Radio de la Tierra en km
+    R = 6371.0 
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
     a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
