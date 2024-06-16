@@ -14,7 +14,6 @@ def haversine(lat1, lon1, lat2, lon2):
     distance = R * c
     return distance
 
-# Clase para el grafo y el algoritmo de Prim
 class Graph:
     def __init__(self, vertices):
         self.V = vertices
@@ -22,7 +21,7 @@ class Graph:
 
     def add_edge(self, u, v, w):
         self.graph[u][v] = w
-        self.graph[v][u] = w  # Asegura que sea bidireccional
+        self.graph[v][u] = w  
 
     def min_key(self, key, mst_set):
         min_val = float('inf')
@@ -55,14 +54,11 @@ class Graph:
         return mst_edges
 
 def main(num_filas):
-    # Coordenadas base
     ubicacion_base = [-24.1858, -65.2992]
 
-    # Leer los datos del archivo CSV
     archivo = 'dataset-jujuy.csv'
     datos = pd.read_csv(archivo, nrows=num_filas)
 
-    # Extraer y convertir las coordenadas de los datos
     datos[['longitud', 'latitud']] = datos['geojson'].str.strip(' "').str.split(',', expand=True)
     datos['latitud'] = datos['latitud'].astype(float)
     datos['longitud'] = datos['longitud'].astype(float)
@@ -81,7 +77,6 @@ def main(num_filas):
 
     g = Graph(len(ubicaciones))
 
-    # Conectar ubicación base a nodos de alta tensión primero, si existen
     if nodos_alta:
         for nodo_alta in nodos_alta:
             dist = round(haversine(ubicacion_base[0], ubicacion_base[1], nodo_alta[0], nodo_alta[1]), 2)
@@ -91,7 +86,6 @@ def main(num_filas):
             dist = round(haversine(ubicacion_base[0], ubicacion_base[1], nodo_medio[0], nodo_medio[1]), 2)
             g.add_edge(0, ubicaciones.index(nodo_medio), dist)
 
-    # Añadir aristas entre todos los demás nodos
     for i in range(1, len(ubicaciones)):
         for j in range(i + 1, len(ubicaciones)):
             dist = round(haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1]), 2)
@@ -119,7 +113,7 @@ def main(num_filas):
     plt.figure(figsize=(14, 7))
 
     plt.subplot(1, 2, 1)
-    node_pos = nx.spring_layout(G, seed=42)  # Semilla para layout consistente
+    node_pos = nx.spring_layout(G, seed=42) 
     nx.draw(G, pos=node_pos, with_labels=True, node_size=20, edge_color='blue')
     labels = nx.get_edge_attributes(G, 'weight')
     nx.draw_networkx_edge_labels(G, pos=node_pos, edge_labels=labels)

@@ -107,7 +107,6 @@ def main():
 
     g = Graph(len(ubicaciones))
 
-    # Conectar ubicación base a nodos de alta tensión primero, si existen
     if nodos_alta:
         for nodo_alta in nodos_alta:
             dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_alta[0], nodo_alta[1])
@@ -117,7 +116,6 @@ def main():
             dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_medio[0], nodo_medio[1])
             g.add_edge(0, ubicaciones.index(nodo_medio), dist)
 
-    # Añadir aristas entre todos los demás nodos
     for i in range(1, len(ubicaciones)):
         for j in range(i + 1, len(ubicaciones)):
             dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])

@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import sys
 from math import radians, sin, cos, sqrt, atan2
 
-# Función para calcular la distancia Haversine entre dos puntos geográficos
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371.0  
     dlat = radians(lat2 - lat1)
@@ -63,11 +62,9 @@ class Graph:
 def main(num_datos):
     ubicacion_base = [-24.1858, -65.2992]
 
-    # Leer los datos del archivo CSV
     archivo = 'dataset-jujuy.csv'
     datos = pd.read_csv(archivo, nrows=num_datos)
 
-    # Extraer y convertir las coordenadas de los datos
     datos[['longitud', 'latitud']] = datos['geojson'].str.strip(' "').str.split(',', expand=True)
     datos['latitud'] = datos['latitud'].astype(float)
     datos['longitud'] = datos['longitud'].astype(float)
@@ -86,7 +83,6 @@ def main(num_datos):
 
     g = Graph(len(ubicaciones))
 
-    # Conectar ubicación base a nodos de alta tensión primero, si existen
     if nodos_alta:
         for nodo_alta in nodos_alta:
             dist = round(haversine(ubicacion_base[0], ubicacion_base[1], nodo_alta[0], nodo_alta[1]), 2)
@@ -96,7 +92,6 @@ def main(num_datos):
             dist = round(haversine(ubicacion_base[0], ubicacion_base[1], nodo_medio[0], nodo_medio[1]), 2)
             g.add_edge(0, ubicaciones.index(nodo_medio), dist)
 
-    # Añadir aristas entre todos los demás nodos
     for i in range(1, len(ubicaciones)):
         for j in range(i + 1, len(ubicaciones)):
             dist = round(haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1]), 2)
