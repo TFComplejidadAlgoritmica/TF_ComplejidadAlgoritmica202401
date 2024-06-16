@@ -5,7 +5,7 @@ import sys
 from math import radians, sin, cos, sqrt, atan2
 
 def haversine(lat1, lon1, lat2, lon2):
-    R = 6371.0  
+    R = 6371.0 
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
     a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
@@ -13,27 +13,22 @@ def haversine(lat1, lon1, lat2, lon2):
     distance = R * c
     return distance
 
-# Clase que representa y maneja el Grafo
 class Graph:
     def __init__(self, vertices):
         self.V = vertices
         self.graph = []
 
-    # Agregar arista al Grafo
     def add_edge(self, u, v, w):
         self.graph.append([u, v, w])
 
-    # Función de búsqueda Union Find
     def find(self, parent, i):
         if parent[i] == i:
             return i
         return self.find(parent, parent[i])
 
-    # Realiza UNION de "x" y "y"
     def apply_union(self, parent, rank, x, y):
         xroot = self.find(parent, x)
         yroot = self.find(parent, y)
-        # Coloca la raíz del árbol más pequeño bajo la raíz del árbol más grande
         if rank[xroot] < rank[yroot]:
             parent[xroot] = yroot
         elif rank[xroot] > rank[yroot]:
@@ -42,83 +37,99 @@ class Graph:
             parent[yroot] = xroot
             rank[xroot] += 1
 
-    # Aplicando el Algoritmo Kruskal
     def kruskal_algo(self):
-        result = [] # Resultado
-        i, e, tot_weight = 0, 0, 0  # "i": índice usado para las aristas ordenadas. "e" usado para result[]
-        self.graph = sorted(self.graph, key=lambda item: item[2]) # Ordena el Grafo por los Costos de las aristas, en orden creciente
+        result = []
+        i, e, tot_weight = 0, 0, 0.0
+        self.graph = sorted(self.graph, key=lambda item: item[2])
         parent = []
         rank = []
-        # Crea subconjuntos a partir de los Vertices V
         for node in range(self.V):
             parent.append(node)
             rank.append(0)
-        while e < self.V - 1: # Mientras el número de aristas a tomar es menor que V-1
-            # Elegimos el borde más pequeño e incrementamos el índice para la próxima iteración
+        while e < self.V - 1:
             u, v, w = self.graph[i]
             i = i + 1
             x = self.find(parent, u)
             y = self.find(parent, v)
-            # Si incluir este borde no provoca un ciclo, inclúyalo en el resultado e incremente el índice del resultado para el borde siguiente
             if x != y:
                 e = e + 1
                 result.append([u, v, w])
                 self.apply_union(parent, rank, x, y)
+                tot_weight += w
 
-        # Aristas que forman parte del MST
-        for u, v, weight in result:
-            tot_weight = tot_weight + weight
-            print("%d - %d: %f" % (u, v, weight))
-
-        print("Costo total del MST para el grafo: ", tot_weight)
-
-        return result
+        return result, tot_weight
 
 def main(num_datos):
-    ubicacion_base = [-24.1858, -65.2992]
+    ubicacion_base = [-24.1858, -65.2992]  
 
-    archivo = 'dataset-jujuy.csv'
+    archivo = 'dataset-jujuy.csv'  
     datos = pd.read_csv(archivo, nrows=num_datos)
 
-    datos[['longitud', 'latitud']] = datos['geojson'].str.split(',', expand=True)
-
+    datos[['longitud', 'latitud']] = datos['latitud_y_longitud'].str.strip(' "').str.split(',', expand=True)
     datos['latitud'] = datos['latitud'].astype(float)
     datos['longitud'] = datos['longitud'].astype(float)
 
-    ubicaciones = [ubicacion_base]  
+    ubicaciones = [ubicacion_base]
+    nodos_medio = []
+    nodos_alta = []
+
     for indice, fila in datos.iterrows():
         ubicacion = [fila['latitud'], fila['longitud']]
         ubicaciones.append(ubicacion)
+        if fila['tension'] <= 20:
+            nodos_medio.append(ubicacion)
+        elif fila['tension'] == 33:
+            nodos_alta.append(ubicacion)
 
     g = Graph(len(ubicaciones))
-    for i in range(len(ubicaciones)):
+
+    if nodos_alta:
+        for nodo_alta in nodos_alta:
+            dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_alta[0], nodo_alta[1])
+            g.add_edge(0, ubicaciones.index(nodo_alta), dist)
+    else:
+        for nodo_medio in nodos_medio:
+            dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_medio[0], nodo_medio[1])
+            g.add_edge(0, ubicaciones.index(nodo_medio), dist)
+
+    for i in range(1, len(ubicaciones)):
         for j in range(i + 1, len(ubicaciones)):
             dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
             g.add_edge(i, j, dist)
 
-    mst_edges = g.kruskal_algo()
+    mst_edges, mst_total_weight = g.kruskal_algo()
 
     G = nx.Graph()
 
     for i, ubicacion in enumerate(ubicaciones):
-        G.add_node(i, pos=(ubicacion[1], ubicacion[0])) 
+        G.add_node(i, pos=(ubicacion[1], ubicacion[0]))
 
     for edge in mst_edges:
         u, v, w = edge
         G.add_edge(u, v, weight=w)
 
     plt.figure(figsize=(14, 7))
+
+    print("Lista de adyacencia:")
+    for row in g.graph:
+        print(row)
     plt.subplot(1, 2, 1)
-    node_pos = nx.get_node_attributes(G, 'pos')
-    nx.draw(G, pos=node_pos, with_labels=False, node_size=20, edge_color='blue')
+    #node_pos = nx.get_node_attributes(G, 'pos')
+    node_pos = nx.shell_layout(G)
+    nx.draw(G, pos=node_pos, with_labels=True, node_size=20, edge_color='blue')
+    edge_labels = nx.get_edge_attributes(G, 'weight')
+    nx.draw_networkx_edge_labels(G, pos=node_pos, edge_labels=edge_labels)
     plt.title('Grafo Original')
 
     plt.subplot(1, 2, 2)
-    mst_pos = nx.spring_layout(G, seed=42)  # Layout para mostrar el MST de manera más clara
-    nx.draw(G, pos=mst_pos, with_labels=False, node_size=20, edge_color='red')
-    plt.title('MST de Kruskal')
+    mst_pos = nx.spring_layout(G, seed=42)
+    nx.draw(G, pos=mst_pos, with_labels=True, node_size=20, edge_color='red')
+    edge_labels = nx.get_edge_attributes(G, 'weight')
+    nx.draw_networkx_edge_labels(G, pos=mst_pos, edge_labels=edge_labels)
+    plt.title('MST de Kruskal\nPeso total: {:.2f} km'.format(mst_total_weight))
 
     plt.show()
+    
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

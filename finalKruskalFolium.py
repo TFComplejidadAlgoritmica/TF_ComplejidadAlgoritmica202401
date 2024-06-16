@@ -73,41 +73,57 @@ class Graph:
 
         return result
 
-def main():
-    num_datos = int(sys.argv[1])
-
+def cargar_y_procesar_datos(archivo, num_filas):
     ubicacion_base = [-24.1858, -65.2992]
 
-    mapa = folium.Map(location=ubicacion_base, zoom_start=13)
-
-    archivo = 'dataset-jujuy.csv'
-    datos = pd.read_csv(archivo, nrows=num_datos)
-
-    datos[['longitud', 'latitud']] = datos['geojson'].str.split(',', expand=True)
+    datos = pd.read_csv(archivo, nrows=num_filas)
+    datos[['longitud', 'latitud']] = datos['latitud_y_longitud'].str.strip(' "').str.split(',', expand=True)
     datos['latitud'] = datos['latitud'].astype(float)
     datos['longitud'] = datos['longitud'].astype(float)
 
-    folium.Marker(location=ubicacion_base, icon=folium.Icon(color='red')).add_to(mapa)
-
+    ubicaciones = [ubicacion_base]
     nodos_medio = []
     nodos_alta = []
-    ubicaciones = [ubicacion_base]  
 
     for indice, fila in datos.iterrows():
         ubicacion = [fila['latitud'], fila['longitud']]
-        folium.Marker(location=ubicacion, icon=folium.Icon(color='orange')).add_to(mapa)
         ubicaciones.append(ubicacion)
-        
         if fila['tension'] <= 20:
             nodos_medio.append(ubicacion)
         elif fila['tension'] == 33:
             nodos_alta.append(ubicacion)
 
     g = Graph(len(ubicaciones))
-    for i in range(len(ubicaciones)):
+
+    if nodos_alta:
+        for nodo_alta in nodos_alta:
+            dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_alta[0], nodo_alta[1])
+            g.add_edge(0, ubicaciones.index(nodo_alta), dist)
+    else:
+        for nodo_medio in nodos_medio:
+            dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_medio[0], nodo_medio[1])
+            g.add_edge(0, ubicaciones.index(nodo_medio), dist)
+
+    for i in range(1, len(ubicaciones)):
         for j in range(i + 1, len(ubicaciones)):
             dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
             g.add_edge(i, j, dist)
+
+    return g, ubicaciones
+
+def main():
+    num_datos = int(sys.argv[1])
+
+    mapa = folium.Map(location=[-24.1858, -65.2992], zoom_start=13)
+    imagen_personalizada = 'plantaPrincipal.jpg'
+    icono_personalizado = folium.features.CustomIcon(icon_image=imagen_personalizada, icon_size=(70, 70))
+    folium.Marker(location=[-24.1858, -65.2992], icon=icono_personalizado).add_to(mapa)
+
+    archivo = 'dataset-jujuy.csv'
+    g, ubicaciones = cargar_y_procesar_datos(archivo, num_datos)
+    
+    for ubicacion in ubicaciones[1:]:
+        folium.Marker(location=ubicacion, icon=folium.Icon(color='orange')).add_to(mapa)
 
     mst_edges = g.kruskal_algo()
 

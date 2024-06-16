@@ -1,11 +1,12 @@
-import heapq
 import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
 from math import radians, sin, cos, sqrt, atan2
+import sys
+from collections import defaultdict
 
-def haversine(lat1, lon1, lon2, lat2):
-    R = 6371.0  
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371.0 
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
     a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
@@ -16,24 +17,22 @@ def haversine(lat1, lon1, lon2, lat2):
 class Graph:
     def __init__(self, vertices):
         self.V = vertices
-        self.graph = [[0 for column in range(vertices)] for row in range(vertices)]
-        
-    def add_edge(self, u, v, w):
-        self.graph[u][v] = w
-        self.graph[v][u] = w
+        self.graph = defaultdict(list)
+
+    def add_edge(self, src, dest, weight):
+        new_edge = [dest, weight]
+        self.graph[src].insert(0, new_edge)
+        new_edge = [src, weight]
+        self.graph[dest].insert(0, new_edge)
 
     def min_key(self, key, mst_set):
-        min = float('inf')
+        min_val = float('inf')
+        min_index = -1
         for v in range(self.V):
-            if key[v] < min and mst_set[v] == False:
-                min = key[v]
+            if key[v] < min_val and not mst_set[v]:
+                min_val = key[v]
                 min_index = v
         return min_index
-
-    def print_mst(self, parent):
-        print("Edge \tWeight")
-        for i in range(1, self.V):
-            print(parent[i], "-", i, "\t", self.graph[i][parent[i]])
 
     def prim_algo(self):
         key = [float('inf')] * self.V
@@ -43,75 +42,139 @@ class Graph:
         parent[0] = -1
         mst_edges = []
 
-        for cout in range(self.V):
+        for _ in range(self.V):
             u = self.min_key(key, mst_set)
             mst_set[u] = True
-            for v in range(self.V):
-                if self.graph[u][v] > 0 and mst_set[v] == False and key[v] > self.graph[u][v]:
-                    key[v] = self.graph[u][v]
+            for neighbor in self.graph[u]:
+                v, weight = neighbor
+                if not mst_set[v] and weight < key[v]:
+                    key[v] = weight
                     parent[v] = u
 
         for i in range(1, self.V):
-            mst_edges.append((parent[i], i, self.graph[i][parent[i]]))
+            mst_edges.append((parent[i], i, key[i]))
 
-        self.print_mst(parent)
         return mst_edges
 
-ubicacion_base = [-24.1858, -65.2992]
+def cargar_y_procesar_datos(archivo, num_filas):
+    ubicacion_base = [-24.1858, -65.2992]
 
-archivo = 'dataset-jujuy.csv'
-num_filas = int(sys.argv[1])
+    datos = pd.read_csv(archivo, nrows=num_filas)
+    datos[['longitud', 'latitud']] = datos['latitud_y_longitud'].str.strip(' "').str.split(',', expand=True)
+    datos['latitud'] = datos['latitud'].astype(float)
+    datos['longitud'] = datos['longitud'].astype(float)
 
-datos = pd.read_csv(archivo).head(num_filas)
-datos[['longitud', 'latitud']] = datos['geojson'].str.strip(' "').str.split(',', expand=True)
-datos['latitud'] = datos['latitud'].astype(float)
-datos['longitud'] = datos['longitud'].astype(float)
+    ubicaciones = [ubicacion_base]
+    nodos_medio = []
+    nodos_alta = []
 
-nodos_medio = []
-nodos_alta = []
-ubicaciones = [ubicacion_base]
+    for indice, fila in datos.iterrows():
+        ubicacion = [fila['latitud'], fila['longitud']]
+        ubicaciones.append(ubicacion)
+        if fila['tension'] <= 20:
+            nodos_medio.append(ubicacion)
+        elif fila['tension'] == 33:
+            nodos_alta.append(ubicacion)
 
-for indice, fila in datos.iterrows():
-    ubicacion = [fila['latitud'], fila['longitud']]
-    ubicaciones.append(ubicacion)
-    if fila['tension'] <= 20:
-        nodos_medio.append(ubicacion)
-    elif fila['tension'] == 33:
-        nodos_alta.append(ubicacion)
+    g = Graph(len(ubicaciones))
 
-g = Graph(len(ubicaciones))
+    if nodos_alta:
+        for nodo_alta in nodos_alta:
+            dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_alta[0], nodo_alta[1])
+            g.add_edge(0, ubicaciones.index(nodo_alta), dist)
+    else:
+        for nodo_medio in nodos_medio:
+            dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_medio[0], nodo_medio[1])
+            g.add_edge(0, ubicaciones.index(nodo_medio), dist)
 
-for i in range(len(ubicaciones)):
-    for j in range(i + 1, len(ubicaciones)):
-        dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
-        g.add_edge(i, j, dist)
+    for i in range(1, len(ubicaciones)):
+        for j in range(i + 1, len(ubicaciones)):
+            dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
+            g.add_edge(i, j, dist)
 
-mst_edges = g.prim_algo()
+    return g, ubicaciones
 
-G = nx.Graph()
+def main(num_filas):
 
-for i, ubicacion in enumerate(ubicaciones):
-    G.add_node(i, pos=(ubicacion[1], ubicacion[0]))
+    ubicacion_base = [-24.1858, -65.2992]  
 
-for i in range(len(ubicaciones)):
-    for j in range(i + 1, len(ubicaciones)):
-        dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
-        G.add_edge(i, j, weight=dist)
+    archivo = 'dataset-jujuy.csv'  
+    datos = pd.read_csv(archivo, nrows=num_filas)
 
-MST = nx.Graph()
-for edge in mst_edges:
-    u, v, w = edge
-    MST.add_edge(u, v, weight=w)
+    datos[['longitud', 'latitud']] = datos['geojson'].str.strip(' "').str.split(',', expand=True)
+    datos['latitud'] = datos['latitud'].astype(float)
+    datos['longitud'] = datos['longitud'].astype(float)
 
-plt.figure(figsize=(14, 7))
-plt.subplot(1, 2, 1)
-node_pos = nx.get_node_attributes(G, 'pos')
-nx.draw(G, pos=node_pos, with_labels=False, node_size=20, edge_color='blue')
-plt.title('Grafo Original')
+    ubicaciones = [ubicacion_base]
+    nodos_medio = []
+    nodos_alta = []
 
-plt.subplot(1, 2, 2)
-mst_pos = nx.spring_layout(MST, seed=42)
-nx.draw(MST, pos=mst_pos, with_labels=False, node_size=20, edge_color='red')
-plt.title('MST de Prim')
+    for indice, fila in datos.iterrows():
+        ubicacion = [fila['latitud'], fila['longitud']]
+        ubicaciones.append(ubicacion)
+        if fila['tension'] <= 20:
+            nodos_medio.append(ubicacion)
+        elif fila['tension'] == 33:
+            nodos_alta.append(ubicacion)
 
-plt.show()
+    g = Graph(len(ubicaciones))
+
+    if nodos_alta:
+        for nodo_alta in nodos_alta:
+            dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_alta[0], nodo_alta[1])
+            g.add_edge(0, ubicaciones.index(nodo_alta), dist)
+    else:
+        for nodo_medio in nodos_medio:
+            dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_medio[0], nodo_medio[1])
+            g.add_edge(0, ubicaciones.index(nodo_medio), dist)
+
+    for i in range(1, len(ubicaciones)):
+        for j in range(i + 1, len(ubicaciones)):
+            dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
+            g.add_edge(i, j, dist)
+            
+    mst_edges = g.prim_algo()
+
+    G = nx.Graph()
+
+    for i, ubicacion in enumerate(ubicaciones):
+        G.add_node(i, pos=(ubicacion[1], ubicacion[0]))
+
+    for u in range(g.V):
+        for neighbor in g.graph[u]:
+            v, w = neighbor
+            if w > 0:
+                G.add_edge(u, v, weight=w)
+
+    mst_total_weight = sum(w for u, v, w in mst_edges)
+
+    plt.figure(figsize=(14, 7))
+
+    print("Lista de adyacencia:")
+    for u in range(g.V):
+        print(f"{u}: {g.graph[u]}")
+
+    plt.subplot(1, 2, 1)
+    node_pos = nx.spring_layout(G, seed=42)
+    nx.draw(G, pos=node_pos, with_labels=True, node_size=20, edge_color='blue')
+    labels = nx.get_edge_attributes(G, 'weight')
+    nx.draw_networkx_edge_labels(G, pos=node_pos, edge_labels=labels)
+    plt.title('Grafo Original')
+
+    plt.subplot(1, 2, 2)
+    MST = nx.Graph()
+    for edge in mst_edges:
+        u, v, w = edge
+        MST.add_edge(u, v, weight=w)
+    nx.draw(MST, pos=node_pos, with_labels=True, node_size=20, edge_color='red')
+    mst_labels = nx.get_edge_attributes(MST, 'weight')
+    nx.draw_networkx_edge_labels(MST, pos=node_pos, edge_labels=mst_labels)
+    plt.title('MST de Prim\nPeso total: {:.6f} km'.format(mst_total_weight))
+    plt.show()
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Uso: python PrimNetwork.py <num_filas>")
+    else:
+        num_filas = int(sys.argv[1])
+        main(num_filas)
