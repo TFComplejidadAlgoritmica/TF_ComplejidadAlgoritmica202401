@@ -38,15 +38,15 @@ class Graph:
             rank[xroot] += 1
 
     def kruskal_algo(self):
-        result = [] 
-        i, e, tot_weight = 0, 0, 0.0  
-        self.graph = sorted(self.graph, key=lambda item: item[2]) 
+        result = []
+        i, e, tot_weight = 0, 0, 0.0
+        self.graph = sorted(self.graph, key=lambda item: item[2])
         parent = []
         rank = []
         for node in range(self.V):
             parent.append(node)
             rank.append(0)
-        while e < self.V - 1: 
+        while e < self.V - 1:
             u, v, w = self.graph[i]
             i = i + 1
             x = self.find(parent, u)
@@ -60,9 +60,9 @@ class Graph:
         return result, tot_weight
 
 def main(num_datos):
-    ubicacion_base = [-24.1858, -65.2992]
+    ubicacion_base = [-24.1858, -65.2992]  
 
-    archivo = 'dataset-jujuy.csv'
+    archivo = 'dataset-jujuy.csv'  
     datos = pd.read_csv(archivo, nrows=num_datos)
 
     datos[['longitud', 'latitud']] = datos['geojson'].str.strip(' "').str.split(',', expand=True)
@@ -102,21 +102,27 @@ def main(num_datos):
     G = nx.Graph()
 
     for i, ubicacion in enumerate(ubicaciones):
-        G.add_node(i, pos=(ubicacion[1], ubicacion[0])) 
+        G.add_node(i, pos=(ubicacion[1], ubicacion[0]))
 
     for edge in mst_edges:
         u, v, w = edge
         G.add_edge(u, v, weight=w)
 
     plt.figure(figsize=(14, 7))
+
     plt.subplot(1, 2, 1)
-    node_pos = nx.get_node_attributes(G, 'pos')
-    nx.draw(G, pos=node_pos, with_labels=False, node_size=20, edge_color='blue')
+    #node_pos = nx.get_node_attributes(G, 'pos')
+    node_pos = nx.shell_layout(G)
+    nx.draw(G, pos=node_pos, with_labels=True, node_size=20, edge_color='blue')
+    edge_labels = nx.get_edge_attributes(G, 'weight')
+    nx.draw_networkx_edge_labels(G, pos=node_pos, edge_labels=edge_labels)
     plt.title('Grafo Original')
 
     plt.subplot(1, 2, 2)
-    mst_pos = nx.spring_layout(G, seed=42)  
-    nx.draw(G, pos=mst_pos, with_labels=False, node_size=20, edge_color='red')
+    mst_pos = nx.spring_layout(G, seed=42)
+    nx.draw(G, pos=mst_pos, with_labels=True, node_size=20, edge_color='red')
+    edge_labels = nx.get_edge_attributes(G, 'weight')
+    nx.draw_networkx_edge_labels(G, pos=mst_pos, edge_labels=edge_labels)
     plt.title('MST de Kruskal\nPeso total: {:.2f} km'.format(mst_total_weight))
 
     plt.show()
