@@ -32,11 +32,9 @@ class ScriptExecutorApp:
         self.opcion_var = tk.IntVar()
 
         opciones = [
-            ("Todos tensión alta con ubicación base", 1),
-            ("Todos tensión media con ubicación base", 2),
-            ("Todos tensión alta sin ubicación base", 3),
-            ("Todos tensión media sin ubicación base", 4),
-            ("Todos nodos con ubicación base", 5)
+            ("Todos tensión alta", 1),
+            ("Todos tensión media", 2),
+            ("Todos nodos", 3)
         ]
 
         self.opciones_radio = []
@@ -50,23 +48,13 @@ class ScriptExecutorApp:
 
     def ejecutar_script(self, nombre_script, datos_filtrados):
         opcion = self.opcion_var.get()
-        ubicacion_base = [-24.1858, -65.2992]
 
         if opcion == 1:
             datos_filtrados = datos_filtrados[datos_filtrados['tension'] == 33].copy()
-            ubicacion = True
         elif opcion == 2:
             datos_filtrados = datos_filtrados[datos_filtrados['tension'] <= 20].copy()
-            ubicacion = True
         elif opcion == 3:
-            datos_filtrados = datos_filtrados[datos_filtrados['tension'] == 33].copy()
-            ubicacion = False
-        elif opcion == 4:
-            datos_filtrados = datos_filtrados[datos_filtrados['tension'] <= 20].copy()
-            ubicacion = False
-        elif opcion == 5:
-            datos_filtrados = datos_filtrados.copy() 
-            ubicacion = True 
+            datos_filtrados = datos_filtrados.copy()
 
         try:
             datos_filtrados.to_csv('datos_filtrados.csv', index=False)
@@ -78,22 +66,7 @@ class ScriptExecutorApp:
         self.script_seleccionado = script
         num_datos = simpledialog.askinteger("Cantidad de Datos", "Ingrese la cantidad de datos a procesar:")
         if num_datos is not None:
-            if "Prim" in self.script_seleccionado:
-                self.mostrar_opciones_prim()
-            else:
-                self.mostrar_opciones_kruskal()
             self.mostrar_datos(num_datos, script)
-
-    def mostrar_opciones_kruskal(self):
-        for radio_btn in self.opciones_radio:
-            radio_btn.pack()
-
-    def mostrar_opciones_prim(self):
-        for radio_btn in self.opciones_radio:
-            if "sin ubicación base" in radio_btn.cget('text'):
-                radio_btn.pack_forget() 
-            else:
-                radio_btn.pack()
 
     def mostrar_datos(self, num_datos, script):
         archivo = 'dataset-jujuy.csv'
