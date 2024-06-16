@@ -110,13 +110,14 @@ def main(num_datos):
         folium.PolyLine([ubicaciones[u], ubicaciones[v]], color="blue", weight=2.5, opacity=1).add_to(mapa)
         total_weight += w
 
-    print("Total weight of MST: ", total_weight)
-
-    mapa.save('mapaGrafo.html')
-    webbrowser.open('mapaGrafo.html')
     print("Matriz de adyacencia:")
     for row in g.graph:
         print(row)
+    print("Peso total del MST: ", total_weight)
+
+    mapa.save('mapaGrafo.html')
+    webbrowser.open('mapaGrafo.html')
+    
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

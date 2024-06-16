@@ -110,6 +110,9 @@ def main(num_datos):
 
     plt.figure(figsize=(14, 7))
 
+    print("Lista de adyacencia:")
+    for row in g.graph:
+        print(row)
     plt.subplot(1, 2, 1)
     #node_pos = nx.get_node_attributes(G, 'pos')
     node_pos = nx.shell_layout(G)
@@ -126,6 +129,7 @@ def main(num_datos):
     plt.title('MST de Kruskal\nPeso total: {:.2f} km'.format(mst_total_weight))
 
     plt.show()
+    
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

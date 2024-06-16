@@ -17,7 +17,7 @@ def haversine(lat1, lon1, lat2, lon2):
 class Graph:
     def __init__(self, vertices):
         self.V = vertices
-        self.graph = [[0 for _ in range(vertices)] for _ in range(vertices)]
+        self.graph = [[0.0 for _ in range(vertices)] for _ in range(vertices)]
 
     def add_edge(self, u, v, w):
         self.graph[u][v] = w
@@ -79,16 +79,16 @@ def main(num_filas):
 
     if nodos_alta:
         for nodo_alta in nodos_alta:
-            dist = round(haversine(ubicacion_base[0], ubicacion_base[1], nodo_alta[0], nodo_alta[1]), 2)
+            dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_alta[0], nodo_alta[1])
             g.add_edge(0, ubicaciones.index(nodo_alta), dist)
     else:
         for nodo_medio in nodos_medio:
-            dist = round(haversine(ubicacion_base[0], ubicacion_base[1], nodo_medio[0], nodo_medio[1]), 2)
+            dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_medio[0], nodo_medio[1])
             g.add_edge(0, ubicaciones.index(nodo_medio), dist)
 
     for i in range(1, len(ubicaciones)):
         for j in range(i + 1, len(ubicaciones)):
-            dist = round(haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1]), 2)
+            dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
             g.add_edge(i, j, dist)
 
     mst_edges = g.prim_algo()
@@ -106,6 +106,9 @@ def main(num_filas):
 
     plt.figure(figsize=(14, 7))
 
+    print("Matriz de adyacencia:")
+    for row in g.graph:
+        print(row)
     plt.subplot(1, 2, 1)
     node_pos = nx.spring_layout(G, seed=42)  
     nx.draw(G, pos=node_pos, with_labels=True, node_size=20, edge_color='blue')
@@ -121,11 +124,7 @@ def main(num_filas):
     nx.draw(MST, pos=node_pos, with_labels=True, node_size=20, edge_color='red')
     mst_labels = nx.get_edge_attributes(MST, 'weight')
     nx.draw_networkx_edge_labels(MST, pos=node_pos, edge_labels=mst_labels)
-    plt.title('MST de Prim\nPeso total: {:.2f} km'.format(mst_total_weight))
-
-    print("Matriz de adyacencia:")
-    for row in g.graph:
-        print(row)
+    plt.title('MST de Prim\nPeso total: {:.6f} km'.format(mst_total_weight))
     plt.show()
     
 
