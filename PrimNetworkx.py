@@ -101,7 +101,7 @@ def main(num_filas):
     archivo = 'dataset-jujuy.csv'  
     datos = pd.read_csv(archivo, nrows=num_filas)
 
-    datos[['longitud', 'latitud']] = datos['geojson'].str.strip(' "').str.split(',', expand=True)
+    datos[['longitud', 'latitud']] = datos['latitud_y_longitud'].str.strip(' "').str.split(',', expand=True)
     datos['latitud'] = datos['latitud'].astype(float)
     datos['longitud'] = datos['longitud'].astype(float)
 
