@@ -72,6 +72,9 @@ class ScriptExecutorApp:
         archivo = 'dataset-jujuy.csv'
         self.datos = pd.read_csv(archivo, nrows=num_datos)
 
+        # Añadir la columna "poder de voltaje"
+        self.datos['poder de voltaje'] = self.datos['tension'].apply(lambda x: 'ALTO' if x == 33 else 'MEDIO')
+
         for widget in self.table_frame.winfo_children():
             widget.destroy()
 
