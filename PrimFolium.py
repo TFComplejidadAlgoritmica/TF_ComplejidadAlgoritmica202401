@@ -73,7 +73,7 @@ def mostrar_advertencia(conexiones, ubicaciones, nodos_alta):
             lat2, lon2 = ubicaciones[torre2]
             
             dist_metros = distancia * 1000  
-            radio_metros = 500  
+            radio_metros = 3000  
             
            
             factor_escala = radio_metros / dist_metros

@@ -85,16 +85,16 @@ def main(num_datos):
 
     if nodos_alta:
         for nodo_alta in nodos_alta:
-            dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_alta[0], nodo_alta[1])
+            dist = round(haversine(ubicacion_base[0], ubicacion_base[1], nodo_alta[0], nodo_alta[1]),2)
             g.add_edge(0, ubicaciones.index(nodo_alta), dist)
     else:
         for nodo_medio in nodos_medio:
-            dist = haversine(ubicacion_base[0], ubicacion_base[1], nodo_medio[0], nodo_medio[1])
+            dist = round(haversine(ubicacion_base[0], ubicacion_base[1], nodo_medio[0], nodo_medio[1]),2)
             g.add_edge(0, ubicaciones.index(nodo_medio), dist)
 
     for i in range(1, len(ubicaciones)):
         for j in range(i + 1, len(ubicaciones)):
-            dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
+            dist = round(haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1]),2)
             g.add_edge(i, j, dist)
 
     mst_edges, mst_total_weight = g.kruskal_algo()

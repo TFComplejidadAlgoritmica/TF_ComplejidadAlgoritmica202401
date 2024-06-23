@@ -42,7 +42,7 @@ class Graph:
     def kruskal_algo(self, nodos_alta, ubicaciones):
         result = []
         i, e, tot_weight = 0, 0, 0
-        conexiones = []  # Lista para almacenar las conexiones de alta tensión
+        conexiones = [] 
         self.graph = sorted(self.graph, key=lambda item: item[2])
         parent = []
         rank = []
@@ -58,7 +58,6 @@ class Graph:
                 e = e + 1
                 result.append([u, v, w])
                 self.apply_union(parent, rank, x, y)
-                # Verificar si ambos nodos son de alta tensión y agregar a conexiones
                 if ubicaciones[u] in nodos_alta and ubicaciones[v] in nodos_alta:
                     conexiones.append((u, v, w))
 
@@ -73,8 +72,8 @@ class Graph:
 
 def mostrar_advertencia(conexiones, ubicaciones, nodos_alta):
     root = tk.Tk()
-    root.withdraw() 
-    
+    root.withdraw()
+
     for conexion in conexiones:
         torre1, torre2, distancia = conexion
         
@@ -85,22 +84,25 @@ def mostrar_advertencia(conexiones, ubicaciones, nodos_alta):
             lat1, lon1 = ubicaciones[torre1]
             lat2, lon2 = ubicaciones[torre2]
             
-            dist_metros = distancia * 1000 
-            radio_metros = 500 
+            dist_metros = distancia * 1000
+            radio_metros = 3000
             
-            # Calcular el factor de escala para ajustar el radio
-            factor_escala = radio_metros / dist_metros
-            radio_ajustado = int(dist_metros * factor_escala)
-            
-            folium.Circle(
-                location=[(lat1 + lat2) / 2, (lon1 + lon2) / 2],
-                radius=radio_ajustado,
-                color='red',
-                fill=True,
-                fill_color='red'
-            ).add_to(mapa)
+            if dist_metros != 0:  # Check if dist_metros is not zero
+                factor_escala = radio_metros / dist_metros
+                radio_ajustado = int(dist_metros * factor_escala)
+                
+                folium.Circle(
+                    location=[(lat1 + lat2) / 2, (lon1 + lon2) / 2],
+                    radius=radio_ajustado,
+                    color='red',
+                    fill=True,
+                    fill_color='red'
+                ).add_to(mapa)
+            else:
+                print(f"La distancia entre {torre1} y {torre2} es cero. Tomar precauciones lo antes posible.")
     
     root.destroy()
+
 
 
 
