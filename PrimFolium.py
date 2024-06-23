@@ -6,9 +6,8 @@ import sys
 import tkinter as tk
 from tkinter import messagebox
 
-# Función para calcular la distancia Haversine entre dos puntos geográficos
 def haversine(lat1, lon1, lat2, lon2):
-    R = 6371.0  # Radio de la Tierra en km
+    R = 6371.0 
     dlat = radians(lat2 - lat1)
     dlon = radians(lon2 - lon1)
     a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
@@ -16,7 +15,6 @@ def haversine(lat1, lon1, lat2, lon2):
     distance = R * c
     return distance
 
-# Clase para el grafo y el algoritmo de Prim
 class Graph:
     def __init__(self, vertices):
         self.V = vertices
@@ -35,13 +33,14 @@ class Graph:
                 min_index = v
         return min_index
 
-    def prim_algo(self):
+    def prim_algo(self, nodos_alta, ubicaciones):
         key = [float('inf')] * self.V
         parent = [None] * self.V
         key[0] = 0
         mst_set = [False] * self.V
         parent[0] = -1
         mst_edges = []
+        conexiones = []
 
         for _ in range(self.V):
             u = self.min_key(key, mst_set)
@@ -54,17 +53,42 @@ class Graph:
 
         for i in range(1, self.V):
             mst_edges.append((parent[i], i, self.graph[i][parent[i]]))
+            if ubicaciones[parent[i]] in nodos_alta and ubicaciones[i] in nodos_alta:
+                conexiones.append((parent[i], i, self.graph[i][parent[i]]))
 
-        return mst_edges
+        return mst_edges, conexiones
 
-def mostrar_advertencia(conexiones, nodos_alta):
+def mostrar_advertencia(conexiones, ubicaciones, nodos_alta):
     root = tk.Tk()
-    root.withdraw()  # Ocultar la ventana principal de Tkinter
+    root.withdraw()  
+    
     for conexion in conexiones:
         torre1, torre2, distancia = conexion
-        mensaje = f"Conexión de alta tensión entre torres: {torre1} - {torre2}: {distancia}"
-        messagebox.showwarning("Advertencia", mensaje)
-    root.destroy()    
+        
+        if distancia >= 0 and distancia <= 3:
+            mensaje = f"Conexión de alta tensión entre torres: {torre1} - {torre2}: {distancia:.2f} km"
+            messagebox.showwarning("Advertencia", mensaje)
+            
+            lat1, lon1 = ubicaciones[torre1]
+            lat2, lon2 = ubicaciones[torre2]
+            
+            dist_metros = distancia * 1000  
+            radio_metros = 500  
+            
+           
+            factor_escala = radio_metros / dist_metros
+            radio_ajustado = int(dist_metros * factor_escala)
+            
+            folium.Circle(
+                location=[(lat1 + lat2) / 2, (lon1 + lon2) / 2],
+                radius=radio_ajustado,
+                color='red',
+                fill=True,
+                fill_color='red'
+            ).add_to(mapa)
+    
+    root.destroy()
+
 
 def cargar_y_procesar_datos(archivo, num_filas):
     datos = pd.read_csv(archivo, nrows=num_filas)
@@ -102,11 +126,12 @@ def cargar_y_procesar_datos(archivo, num_filas):
             dist = haversine(ubicaciones[i][0], ubicaciones[i][1], ubicaciones[j][0], ubicaciones[j][1])
             g.add_edge(i, j, dist)
 
-    return datos, g
+    return datos, g, ubicaciones, nodos_alta
 
 def main(num_datos):
     ubicacion_base = [-24.1858, -65.2992]
 
+    global mapa
     mapa = folium.Map(location=ubicacion_base, zoom_start=13)
 
     imagen_personalizada = 'plantaPrincipal.jpg'
@@ -114,17 +139,29 @@ def main(num_datos):
     folium.Marker(location=ubicacion_base, icon=icono_personalizado).add_to(mapa)
 
     archivo = 'dataset-jujuy.csv'
-    datos, g = cargar_y_procesar_datos(archivo, num_datos) 
+    datos, g, ubicaciones, nodos_alta = cargar_y_procesar_datos(archivo, num_datos) 
 
-    ubicaciones = [ubicacion_base]
-
-    for indice, fila in datos.iterrows():
-        ubicacion = [fila['latitud'], fila['longitud']]
-        # Añade cada ubicación a la lista de ubicaciones
-        ubicaciones.append(ubicacion)
+    for ubicacion in ubicaciones[1:]:
         folium.Marker(location=ubicacion, icon=folium.Icon(color='orange')).add_to(mapa)
 
-    mst_edges = g.prim_algo()  
+    for ubicacion in nodos_alta:
+        dist_km = haversine(ubicacion_base[0], ubicacion_base[1], ubicacion[0], ubicacion[1])
+        dist_metros = dist_km * 1000  
+
+        radio_metros = 10  
+        factor_escala = radio_metros / dist_metros
+
+        radio_ajustado = int(dist_metros * factor_escala)
+
+        folium.Circle(
+            location=ubicacion,
+            radius=radio_ajustado,
+            color='red',
+            fill=True,
+            fill_color='red'
+        ).add_to(mapa)
+
+    mst_edges, conexiones_alta_tension = g.prim_algo(nodos_alta, ubicaciones)
 
     total_weight = 0
 
@@ -133,6 +170,8 @@ def main(num_datos):
         folium.PolyLine([ubicaciones[u], ubicaciones[v]], color="blue", weight=2.5, opacity=1).add_to(mapa)
         total_weight += w
 
+    mostrar_advertencia(conexiones_alta_tension, ubicaciones, nodos_alta)
+
     print("Matriz de adyacencia:")
     for row in g.graph:
         print(row)
@@ -140,7 +179,6 @@ def main(num_datos):
 
     mapa.save('mapaGrafo.html')
     webbrowser.open('mapaGrafo.html')
-    
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

@@ -62,27 +62,48 @@ class Graph:
                 if ubicaciones[u] in nodos_alta and ubicaciones[v] in nodos_alta:
                     conexiones.append((u, v, w))
 
-    # Llamar a mostrar_advertencia aquí si se desea mostrar las advertencias inmediatamente después de encontrarlas
-    # mostrar_advertencia(conexiones)
-
         for u, v, weight in result:
             tot_weight += weight
             print("%d - %d: %f" % (u, v, weight))
 
         print("Costo total del MST para el grafo: ", tot_weight)
 
-        return result, conexiones  # Devolver también las conexiones
+        return result, conexiones  
 
 
-def mostrar_advertencia(conexiones):
+def mostrar_advertencia(conexiones, ubicaciones, nodos_alta):
     root = tk.Tk()
-    root.withdraw()  # Ocultar la ventana principal de Tkinter
+    root.withdraw() 
+    
     for conexion in conexiones:
         torre1, torre2, distancia = conexion
-        mensaje = f"Conexión de alta tensión entre torres: {torre1} - {torre2}: {distancia}"
-        messagebox.showwarning("Advertencia", mensaje)
-    root.destroy()    
-   
+        
+        if distancia >= 0 and distancia <= 5:
+            mensaje = f"Conexión de alta tensión entre torres: {torre1} - {torre2}: {distancia:.2f} km"
+            messagebox.showwarning("Advertencia", mensaje)
+            
+            lat1, lon1 = ubicaciones[torre1]
+            lat2, lon2 = ubicaciones[torre2]
+            
+            dist_metros = distancia * 1000 
+            radio_metros = 500 
+            
+            # Calcular el factor de escala para ajustar el radio
+            factor_escala = radio_metros / dist_metros
+            radio_ajustado = int(dist_metros * factor_escala)
+            
+            folium.Circle(
+                location=[(lat1 + lat2) / 2, (lon1 + lon2) / 2],
+                radius=radio_ajustado,
+                color='red',
+                fill=True,
+                fill_color='red'
+            ).add_to(mapa)
+    
+    root.destroy()
+
+
+
 def cargar_y_procesar_datos(archivo, num_filas):
     ubicacion_base = [-24.1858, -65.2992]
 
@@ -125,6 +146,7 @@ def cargar_y_procesar_datos(archivo, num_filas):
 def main():
     num_datos = int(sys.argv[1])
 
+    global mapa
     mapa = folium.Map(location=[-24.1858, -65.2992], zoom_start=13)
     imagen_personalizada = 'plantaPrincipal.jpg'
     icono_personalizado = folium.features.CustomIcon(icon_image=imagen_personalizada, icon_size=(70, 70))
@@ -133,7 +155,7 @@ def main():
     archivo = 'dataset-jujuy.csv'
     g, ubicaciones, nodos_alta = cargar_y_procesar_datos(archivo, num_datos)
 
-    print (nodos_alta)
+    print(nodos_alta)
     
     for ubicacion in ubicaciones[1:]:
         folium.Marker(location=ubicacion, icon=folium.Icon(color='orange')).add_to(mapa)
@@ -162,15 +184,13 @@ def main():
                 fill_color='red'
             ).add_to(mapa)
 
-
-
     mst_edges, conexiones_alta_tension = g.kruskal_algo(nodos_alta, ubicaciones)
 
     for edge in mst_edges:
         u, v, w = edge
         folium.PolyLine([ubicaciones[u], ubicaciones[v]], color="blue", weight=2.5, opacity=1).add_to(mapa)
 
-    mostrar_advertencia(conexiones_alta_tension)
+    mostrar_advertencia(conexiones_alta_tension, ubicaciones, nodos_alta)
         
     mapa.save('mapaGrafo.html')
     webbrowser.open('mapaGrafo.html')
